@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Câmp pentru specificarea cuvântului -->
+    <EditText
+        android:id="@+id/editTextWord"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Introdu cuvântul" />
+
+    <!-- Câmp pentru numărul minim de litere -->
+    <EditText
+        android:id="@+id/editTextMinLetters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Număr minim de litere"
+        android:inputType="number" />
+
+    <!-- Buton de inițiere a cererii -->
+    <Button
+        android:id="@+id/buttonRequest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Caută" />
+
+    <!-- Câmp pentru afișarea rezultatului -->
+    <TextView
+        android:id="@+id/textViewResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rezultat va apărea aici"
+        android:textSize="16sp"
+        android:layout_marginTop="16dp" />
+
+    <!-- Buton care deschide a doua activitate (harta) -->
+    <Button
+        android:id="@+id/buttonOpenMap"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Deschide Harta"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
