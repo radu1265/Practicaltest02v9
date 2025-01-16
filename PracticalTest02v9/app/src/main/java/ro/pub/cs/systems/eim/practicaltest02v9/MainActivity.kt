@@ -1,6 +1,11 @@
 package ro.pub.cs.systems.eim.practicaltest02v9
 
-import android.content.*
+//package com.example.mydictionary
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -19,35 +24,40 @@ class MainActivity : AppCompatActivity() {
     private lateinit var editTextMinLetters: EditText
     private lateinit var buttonRequest: Button
     private lateinit var textViewResult: TextView
+    private lateinit var buttonOpenMap: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Inițializăm view-urile
         editTextWord = findViewById(R.id.editTextWord)
         editTextMinLetters = findViewById(R.id.editTextMinLetters)
         buttonRequest = findViewById(R.id.buttonRequest)
         textViewResult = findViewById(R.id.textViewResult)
+        buttonOpenMap = findViewById(R.id.buttonOpenMap)
 
-        // Înregistrăm un BroadcastReceiver local pentru a recepționa rezultatele
+        // Înregistrăm un receiver pentru anagrame
         LocalBroadcastManager.getInstance(this)
             .registerReceiver(anagramReceiver, IntentFilter("ANAGRAM_RESULT"))
 
+        // Când apăsăm butonul "Caută anagrame"
         buttonRequest.setOnClickListener {
             val word = editTextWord.text.toString()
             val minLetters = editTextMinLetters.text.toString().toIntOrNull() ?: 0
 
-            // Începe cererea la serviciul web Anagramica
+            // Facem cererea la API anagramica.com
             requestAnagramsFromWebService(word, minLetters)
+        }
+
+        // Când apăsăm butonul "Deschide Harta"
+        buttonOpenMap.setOnClickListener {
+            val intent = Intent(this, MapsActivity::class.java)
+            startActivity(intent)
         }
     }
 
-    /**
-     * Metoda care face cererea HTTP către anagramica.com.
-     * Ex: GET http://www.anagramica.com/all/nevermind
-     */
     private fun requestAnagramsFromWebService(word: String, minLetters: Int) {
-        // Construim URL-ul
         val url = "http://www.anagramica.com/all/$word"
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -57,39 +67,33 @@ class MainActivity : AppCompatActivity() {
                 val response = client.newCall(request).execute()
 
                 response.body?.let { responseBody ->
-                    // Răspuns brut
                     val responseString = responseBody.string()
-
-                    // 3.a) – Afișăm răspunsul complet (JSON) în LogCat
+                    // Afișăm răspunsul brut în LogCat
                     Log.d("ANAGRAM_JSON", "Răspuns brut: $responseString")
 
-                    // 3.b) – Parsăm JSON-ul
-                    // Formatul e ceva de genul:
-                    // { "all": ["denier", "reined", "dime", ...] }
+                    // Parsăm JSON-ul
                     val jsonObject = JSONObject(responseString)
                     val allArray = jsonObject.optJSONArray("all") ?: return@launch
 
-                    // Obținem lista de anagrame într-un ArrayList<String>
                     val anagrams = mutableListOf<String>()
                     for (i in 0 until allArray.length()) {
                         val anagramWord = allArray.optString(i, "")
                         anagrams.add(anagramWord)
                     }
 
-                    // Filtrăm anagramele în funcție de lungimea minimă
+                    // Filtrăm anagramele cu lungimea >= minLetters
                     val filtered = anagrams.filter { it.length >= minLetters }
 
-                    // Afișăm rezultatele parsate și filtrate în LogCat
                     Log.d("ANAGRAM_JSON", "Anagrame filtrate: $filtered")
 
-                    // 3.c) – Trimitem datele prin broadcast
-                    // Construim un string cu toate anagramele (linie cu linie)
+                    // Combinăm într-un string pentru afișare
                     val resultToSend = if (filtered.isNotEmpty()) {
                         filtered.joinToString(separator = "\n")
                     } else {
-                        "Nicio anagramă cu lungimea >= $minLetters găsită."
+                        "Nicio anagramă găsită cu lungimea >= $minLetters."
                     }
 
+                    // Trimitem prin broadcast local
                     sendBroadcastWithResult(resultToSend)
                 }
             } catch (ex: Exception) {
@@ -98,19 +102,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Trimite rezultatul printr-un broadcast local
-     */
     private fun sendBroadcastWithResult(result: String) {
         val intent = Intent("ANAGRAM_RESULT")
         intent.putExtra("anagramList", result)
-        // Folosim LocalBroadcastManager pentru a trimite în interiorul aplicației
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }
 
-    /**
-     * BroadcastReceiver care ascultă după anagrame și actualizează UI
-     */
     private val anagramReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val anagrams = intent?.getStringExtra("anagramList") ?: ""
